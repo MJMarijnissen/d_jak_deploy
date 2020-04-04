@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from pydantic import BaseModel
 
 app = FastAPI()
 
@@ -25,3 +26,12 @@ def method_return():
 @app.delete('/method')
 def method_return():
 	return {"method": "DELETE"}
+
+N = 0
+
+@app.post('/patient/{patients}')
+def return_patient(patients: str):
+	global N
+	output_str = {"id": f'{N}', "patient" :  f'{patients}'}
+	N += 1
+	return output_str
