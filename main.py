@@ -36,6 +36,6 @@ class Patients(BaseModel):
 @app.post('/patient/')
 def return_patient(patients: Patients):
 	global N
-	output_str = {"id": f'{N}', "patient" :  patients}
+	output_str = {"id": N, "patient" :  patients}
 	N += 1
 	return output_str
