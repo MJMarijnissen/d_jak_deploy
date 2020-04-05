@@ -47,5 +47,6 @@ def post_patient(patients: Patients):
 def return_patient(pk: int):
 	global patients_list
 	if pk > len(patients_list) -1:
-		raise HTTPException(status_code = 404)
+		raise HTTPException(status_code = 204)
+		return None
 	return patients_list[pk]
