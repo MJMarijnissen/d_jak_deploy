@@ -29,9 +29,13 @@ def method_return():
 
 N = 0
 
-@app.post('/patient/{patients}')
-def return_patient(patients: str):
+class Patients(BaseModel):
+    name: str
+    surename: str
+
+@app.post('/patient/')
+def return_patient(patients: Patients):
 	global N
-	output_str = {"id": f'{N}', "patient" :  f'{patients}'}
+	output_str = {"id": f'{N}', "patient" :  patients}
 	N += 1
 	return output_str
