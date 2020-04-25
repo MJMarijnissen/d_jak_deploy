@@ -1,7 +1,11 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+import secrets
+
+from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
 app = FastAPI()
+
+security = HTTPBasic()
 
 @app.get('/')
 def hello_world():
@@ -10,3 +14,16 @@ def hello_world():
 @app.get('/welcome')
 def hello_welcome():
 	return {"message": "Hello again, how do you do?"}
+
+@app.post('/login')
+def get_current_username(credentials: HTTPBasicCredentials = Depends(security)):
+    correct_username = secrets.compare_digest(credentials.username, "trudnY")
+    correct_password = secrets.compare_digest(credentials.password, "PaC13Nt")
+    if not (correct_username and correct_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    response = RedirectResponse(url='/welcome')
+    return response
