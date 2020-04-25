@@ -2,6 +2,7 @@ import secrets
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi.responses import RedirectResponse
 
 app = FastAPI()
 
@@ -25,5 +26,5 @@ def get_current_username(credentials: HTTPBasicCredentials = Depends(security)):
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Basic"},
         )
-    response = RedirectResponse(url='/welcome')
+    response = RedirectResponse(url='/welcome', status_code=status.HTTP_302_FOUND)
     return response
