@@ -27,12 +27,20 @@ def authenticate(username: str, password: str):
     app.sessions[token] = username
     return token
 
+def check_token(ses_token: str=Cookie(None)):
+	if ses_token noi in app.sessions:
+		raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail = "login required")
+	return True
+
 @app.get('/')
 def hello_world():
 	return {"message": "Hello World during the coronavirus pandemic!"}
 
 @app.get('/welcome')
 def hello_welcome():
+    if session_token is None:
+        response.status_code = status.HTTP_401_UNAUTHORIZED
+        return "Unauthorized"
 	return {"message": "Hello again, how do you do?"}
 
 @app.post('/login')
@@ -42,8 +50,39 @@ def get_current_username(credentials: HTTPBasicCredentials = Depends(security)):
     response.set_cookie(key="ses_token", value=ses_token)
     return response
 
-@app.post('/logout')
+@app.post('/logout', dependencies=[Depends(authorize)])
 def logout_user(ses_token: str = Cookie(None)):
 	del app.sessions[ses_token]
-	response = RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
+	response = RedirectResponse(url="/welcome", status_code=status.HTTP_302_FOUND)
 	return response
+
+
+N = 0
+patients_list = []
+
+class Patients(BaseModel):
+    name: str
+    surename: str
+
+@app.post('/patient/')
+def post_patient(patients: Patients):
+    if session_token is None:
+        response.status_code = status.HTTP_401_UNAUTHORIZED
+        return "Unauthorized"
+	global N
+	global patients_list
+	output_str = {"id": N, "patient" :  patients}
+	patients_list.append(patients)
+	N += 1
+	return output_str
+
+@app.get('/patient/{pk}')
+def return_patient(pk: int):
+    if session_token is None:
+        response.status_code = status.HTTP_401_UNAUTHORIZED
+        return "Unauthorized"
+	global patients_list
+	if pk > len(patients_list) -1:
+		raise HTTPException(status_code = 204)
+		return None
+	return patients_list[pk]
