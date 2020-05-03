@@ -15,10 +15,14 @@ async def shutdown():
 
 
 @app.get("/tracks")
-async def root():
+async def get_tracks(page: int = 0, per_page: int = 10):
     cursor = app.db_connection.cursor()
-    tracks = cursor.execute("SELECT name FROM tracks").fetchall()
-    return {
-        "tracks": [x[0] for x in tracks], #było tracks
-    }
+    tracks = cursor.execute("SELECT trackid, name, albumid, mediatypeid, genreid, composer, milliseconds, "
+        "bytes, unitprice FROM tracks ORDER BY trackid LIMIT ? OFFSET ?;",
+        (per_page, page * per_page),
+    ).fetchall()
+    return tracks
 
+
+
+#SELECT * from tracks LIMIT 10 OFFSET 10
