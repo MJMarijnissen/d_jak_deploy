@@ -1,7 +1,9 @@
 import sqlite3
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List
+from starlette import status
+
 
 app = FastAPI()
 
@@ -46,5 +48,16 @@ async def get_tracks(page: int = 0, per_page: int = 10, db: sqlite3.Connection =
     return tracks
 
 
-
-#SELECT * from tracks LIMIT 10 OFFSET 10
+@app.get("/tracks/composers/", response_model=List[str],)
+async def composers_tracks(composer_name: str, db: sqlite3.Connection = Depends(get_db)):
+    db.row_factory = lambda c, x: x[0]
+    data = db.execute(
+        "SELECT name FROM tracks WHERE composer = ? ORDER BY name;", (composer_name,)
+    ).fetchall()
+    if not data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": f"Composer: {composer_name} not found"},
+        )
+    else:
+        return data
