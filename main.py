@@ -19,6 +19,15 @@ class Track(BaseModel):
     Bytes: Optional[int]
     UnitPrice: float
 
+class NewAlbum(BaseModel):
+    title: str
+    artist_id: int
+
+class Album(BaseModel):
+    AlbumId: int
+    Title: str
+    ArtistId: int
+
 @app.on_event("startup")
 async def startup():
     app.db_connection = sqlite3.connect('chinook.db')
@@ -61,3 +70,37 @@ async def composers_tracks(composer_name: str, db: sqlite3.Connection = Depends(
         )
     else:
         return data
+
+@app.post("/albums", status_code=status.HTTP_201_CREATED, response_model=Album)
+async def new_album(album: NewAlbum, db: sqlite3.Connection = Depends(get_db)):
+    artist = db.execute(
+        "SELECT name FROM artists WHERE artistid = ?;", (album.artist_id,)
+    ).fetchone()
+    if not artist:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": {"error": f"No artist with this Id: {album.artist_id}"}},
+        )
+    cursor = db.execute(
+        "INSERT INTO albums (title, artistid) VALUES (?, ?);",
+        (album.title, album.artist_id),
+    )
+    db.commit()
+    album = db.execute(
+        "SELECT albumid, title, artistid FROM albums WHERE albumid = ?;",
+        (cursor.lastrowid,),
+    ).fetchone()
+    return album
+
+
+@app.get("/albums/{album_id}", response_model=Album)
+async def gat_album_by_id(album_id: int, db: sqlite3.Connection = Depends(get_db)):
+    album = db.execute(
+        "SELECT albumid, title, artistid FROM albums WHERE albumid = ?;", (album_id,),
+    ).fetchone()
+    if not album:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": {"error": f"No album with this Id: {album_id}"}},
+        )
+    return album
