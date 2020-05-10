@@ -28,6 +28,31 @@ class Album(BaseModel):
     Title: str
     ArtistId: int
 
+class Customer(BaseModel):
+    CustomerId: int
+    FirstName: str
+    LastName: str
+    Company: str
+    Address: str
+    City: str
+    State: str
+    Country: str
+    PostalCode: str
+    Phone: str
+    Fax: str
+    Email: str
+    SupportRepId: int
+
+
+class CustomerUpdateRequest(BaseModel):
+    company: str = None
+    address: str = None
+    city: str = None
+    state: str = None
+    country: str = None
+    postalcode: str = None
+    fax: str = None
+
 @app.on_event("startup")
 async def startup():
     app.db_connection = sqlite3.connect('chinook.db')
@@ -104,3 +129,32 @@ async def gat_album_by_id(album_id: int, db: sqlite3.Connection = Depends(get_db
             detail={"error": {"error": f"No album with this Id: {album_id}"}},
         )
     return album
+
+@app.put("/customers/{customer_id}", response_model=Customer)
+async def update_customer(
+    customer_id: int,
+    customer_data: CustomerUpdateRequest,
+    db: sqlite3.Connection = Depends(get_db),):
+    customer = db.execute(
+        "SELECT * FROM customers WHERE customerid = ?;", (customer_id,)
+    ).fetchone()
+    if not customer:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": {"error": f"Wrong customer Id: {customer_id}"}},
+        )
+    customer_data = customer_data.dict(exclude_unset=True)
+    command = (
+        f"UPDATE customers SET "
+        f"{', '.join(f'{key}=:{key}' for key in customer_data)} "
+        f"WHERE customerid=:customerid;"
+    )
+    print(command)
+    db.execute(command, dict(customerid=customer_id, **customer_data))
+    db.commit()
+    updated = {
+        key: customer_data[key.lower()]
+        for key in customer.keys()
+        if key.lower() in customer_data
+    }
+    return dict(customer, **updated)
